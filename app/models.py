@@ -183,6 +183,11 @@ class CogitateResponse(SQLModel):
     search_id: int
 
 
+class ResultReactionUpdate(SQLModel):
+    """Corps de PATCH /results/{id} : "like", "dislike" ou null (annuler)."""
+    reaction: Reaction | None  # pas de valeur par défaut : le champ est obligatoire
+
+
 class ResultRead(SQLModel):
     """Réponse JSON pour un produit trouvé."""
     id: int

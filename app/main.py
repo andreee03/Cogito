@@ -17,6 +17,9 @@ from app.models import (
     ItemStatus,
     ItemUpdate,
     ProfileData,
+    Result,
+    ResultReactionUpdate,
+    ResultRead,
     Search,
     SearchRead,
     SearchStatus,
@@ -47,9 +50,15 @@ def get_item_or_404(session: Session, item_id: int) -> Item:
     return item
 
 
+def done_searches(item: Item) -> list[Search]:
+    """Les itérations réussies. Une recherche en erreur ne compte pas :
+    on peut la relancer sans perdre une de ses 3 itérations."""
+    return [s for s in item.searches if s.status == SearchStatus.done]
+
+
 def to_item_read(item: Item) -> ItemRead:
     # iterations_count n'est pas une colonne : on le calcule à partir des recherches.
-    return ItemRead.model_validate(item, update={"iterations_count": len(item.searches)})
+    return ItemRead.model_validate(item, update={"iterations_count": len(done_searches(item))})
 
 
 # ---------------------------------------------------------------------------
@@ -138,8 +147,14 @@ def cogitate_item(
     item = get_item_or_404(session, item_id)
     if any(s.status in (SearchStatus.pending, SearchStatus.running) for s in item.searches):
         raise HTTPException(status_code=409, detail="Une recherche est déjà en cours pour cet article")
+    done = len(done_searches(item))
+    if done >= cogitate.MAX_ITERATIONS:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Limite de {cogitate.MAX_ITERATIONS} itérations atteinte pour cet article",
+        )
 
-    search = Search(item_id=item.id, iteration=len(item.searches) + 1, feedback=data.feedback)
+    search = Search(item_id=item.id, iteration=done + 1, feedback=data.feedback)
     item.status = ItemStatus.en_recherche
     session.add_all([search, item])
     session.commit()
@@ -161,3 +176,19 @@ def read_search(search_id: int, session: SessionDep):
     if search is None:
         raise HTTPException(status_code=404, detail="Recherche introuvable")
     return search
+
+
+# ---------------------------------------------------------------------------
+# Résultats
+# ---------------------------------------------------------------------------
+
+@app.patch("/results/{result_id}", response_model=ResultRead)
+def update_result(result_id: int, data: ResultReactionUpdate, session: SessionDep):
+    result = session.get(Result, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Résultat introuvable")
+    result.reaction = data.reaction
+    session.add(result)
+    session.commit()
+    session.refresh(result)
+    return result

@@ -32,6 +32,9 @@ INPUT_PRICE_PER_MTOK = 1.0     # 1 $ par million de tokens d'entrée
 OUTPUT_PRICE_PER_MTOK = 5.0    # 5 $ par million de tokens de sortie
 WEB_SEARCH_PRICE = 0.01        # 0,01 $ par recherche web
 
+# Nombre maximum d'itérations réussies par article.
+MAX_ITERATIONS = 3
+
 # Nombre maximum de reprises après un "pause_turn" (évite une boucle infinie).
 MAX_CONTINUATIONS = 5
 
@@ -61,9 +64,13 @@ class CogitateError(Exception):
 def get_client() -> anthropic.AsyncAnthropic:
     """Client Claude (la clé est lue dans ANTHROPIC_API_KEY).
 
-    Les tests remplacent cette fonction par un faux client : aucun test
-    n'appelle la vraie API.
+    Avec FAKE_CLAUDE=1 dans le .env, on utilise un faux Claude gratuit
+    (app/fake_claude.py). Les tests, eux, remplacent cette fonction par leur
+    propre faux client : aucun test n'appelle la vraie API.
     """
+    if os.getenv("FAKE_CLAUDE") == "1":
+        from app.fake_claude import FakeAsyncClaude
+        return FakeAsyncClaude()
     if not os.getenv("ANTHROPIC_API_KEY"):
         raise CogitateError("ANTHROPIC_API_KEY manquante : ajoute-la dans le fichier .env puis relance le serveur.")
     return anthropic.AsyncAnthropic()
@@ -73,8 +80,34 @@ def get_client() -> anthropic.AsyncAnthropic:
 # 1. Construction du message
 # ---------------------------------------------------------------------------
 
-def build_user_prompt(master_prompt: str, item: Item, feedback: str | None = None) -> str:
-    """Message envoyé à Claude : mes goûts + l'article recherché."""
+REACTION_LABELS = {"like": "J'AIME", "dislike": "JE N'AIME PAS"}
+
+
+def summarize_previous(searches: list[Search]) -> list[str]:
+    """Résumé COMPACT des itérations précédentes : une ligne par produit
+    (nom, marque, prix, réaction). Jamais les pages brutes : c'est ce qui
+    garde le coût en tokens bas."""
+    lines = []
+    for search in searches:
+        lines.append(f"### Itération {search.iteration}")
+        if search.feedback:
+            lines.append(f"Mon retour avant cette itération : {search.feedback.strip()}")
+        for r in search.results:
+            price = f"{r.price:g} {r.currency or ''}".strip() if r.price is not None else "prix inconnu"
+            reaction = getattr(r.reaction, "value", r.reaction)
+            label = f" — {REACTION_LABELS[reaction]}" if reaction else ""
+            lines.append(f"- {r.name} ({r.brand or 'marque inconnue'}, {price}){label}")
+    return lines
+
+
+def build_user_prompt(
+    master_prompt: str,
+    item: Item,
+    feedback: str | None = None,
+    previous: list[Search] | None = None,
+) -> str:
+    """Message envoyé à Claude : mes goûts + l'article recherché
+    (+ le résumé des itérations précédentes et mon retour, à partir de la 2e)."""
     category = getattr(item.category, "value", item.category)
     lines = [
         "## Mes goûts et principes d'achat",
@@ -90,7 +123,14 @@ def build_user_prompt(master_prompt: str, item: Item, feedback: str | None = Non
         lines.append(f"- Budget maximum : {item.budget_max:g} €")
     if item.custom_prompt:
         lines += ["", "## Consignes spécifiques pour cet article", item.custom_prompt.strip()]
-    # Jalon 4 : on ajoutera ici le résumé des itérations précédentes.
+    if previous:
+        lines += [
+            "",
+            "## Ce que tu m'as déjà proposé",
+            "Ne repropose pas ces produits. Inspire-toi de ceux que j'aime et "
+            "éloigne-toi de ceux que je n'aime pas.",
+            *summarize_previous(previous),
+        ]
     if feedback:
         lines += ["", "## Mon retour sur la recherche précédente", feedback.strip()]
     lines += ["", "Trouve-moi entre 5 et 8 produits et termine par le bloc JSON demandé."]
@@ -233,8 +273,12 @@ async def run_search(search_id: int) -> None:
         search.status = SearchStatus.running
         session.add(search)
         session.commit()
+        previous = [
+            s for s in search.item.searches
+            if s.status == SearchStatus.done and s.id != search_id
+        ]
         user_prompt = build_user_prompt(
-            get_or_create_profile(session).master_prompt, search.item, search.feedback
+            get_or_create_profile(session).master_prompt, search.item, search.feedback, previous
         )
 
     cost: float | None = None

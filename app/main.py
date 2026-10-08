@@ -3,16 +3,30 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Response, status
 from sqlmodel import Session, select
 
+from app import cogitate
 from app.db import get_or_create_profile, get_session, init_db
-from app.models import Item, ItemCreate, ItemRead, ItemUpdate, ProfileData
+from app.models import (
+    CogitateRequest,
+    CogitateResponse,
+    Item,
+    ItemCreate,
+    ItemRead,
+    ItemStatus,
+    ItemUpdate,
+    ProfileData,
+    Search,
+    SearchRead,
+    SearchStatus,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()  # au démarrage : création des tables + profil par défaut
+    cogitate.fail_interrupted_searches()
     yield
 
 
@@ -107,3 +121,43 @@ def delete_item(item_id: int, session: SessionDep):
     session.delete(item)  # supprime aussi recherches et résultats (cascade)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# Recherches ("Cogiter")
+# ---------------------------------------------------------------------------
+
+@app.post(
+    "/items/{item_id}/cogitate",
+    response_model=CogitateResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def cogitate_item(
+    item_id: int, data: CogitateRequest, background_tasks: BackgroundTasks, session: SessionDep
+):
+    item = get_item_or_404(session, item_id)
+    if any(s.status in (SearchStatus.pending, SearchStatus.running) for s in item.searches):
+        raise HTTPException(status_code=409, detail="Une recherche est déjà en cours pour cet article")
+
+    search = Search(item_id=item.id, iteration=len(item.searches) + 1, feedback=data.feedback)
+    item.status = ItemStatus.en_recherche
+    session.add_all([search, item])
+    session.commit()
+    session.refresh(search)
+
+    # La recherche (30 s à 2 min) tourne après l'envoi de la réponse 202.
+    background_tasks.add_task(cogitate.run_search, search.id)
+    return CogitateResponse(search_id=search.id)
+
+
+@app.get("/items/{item_id}/searches", response_model=list[SearchRead])
+def list_searches(item_id: int, session: SessionDep):
+    return get_item_or_404(session, item_id).searches  # ordre chronologique (par id)
+
+
+@app.get("/searches/{search_id}", response_model=SearchRead)
+def read_search(search_id: int, session: SessionDep):
+    search = session.get(Search, search_id)
+    if search is None:
+        raise HTTPException(status_code=404, detail="Recherche introuvable")
+    return search

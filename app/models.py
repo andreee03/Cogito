@@ -133,7 +133,7 @@ class ItemRead(ItemBase):
 
 
 # ---------------------------------------------------------------------------
-# Recherches et résultats (tables créées dès maintenant, utilisées au jalon 3)
+# Recherches et résultats
 # ---------------------------------------------------------------------------
 
 class Search(SQLModel, table=True):
@@ -171,3 +171,44 @@ class Result(SQLModel, table=True):
     reaction: Reaction | None = Field(default=None, sa_type=AutoString)
 
     search: Search = Relationship(back_populates="results")
+
+
+class CogitateRequest(SQLModel):
+    """Corps de POST /items/{id}/cogitate."""
+    feedback: str | None = None
+
+
+class CogitateResponse(SQLModel):
+    """Réponse 202 de POST /items/{id}/cogitate."""
+    search_id: int
+
+
+class ResultRead(SQLModel):
+    """Réponse JSON pour un produit trouvé."""
+    id: int
+    search_id: int
+    name: str
+    brand: str | None
+    price: float | None
+    currency: str | None
+    url: str
+    image_url: str | None
+    description: str | None
+    why_it_fits: str
+    score: int
+    link_verified: bool
+    price_verified: bool
+    reaction: Reaction | None
+
+
+class SearchRead(SQLModel):
+    """Réponse JSON pour une recherche, avec ses résultats."""
+    id: int
+    item_id: int
+    iteration: int
+    feedback: str | None
+    status: SearchStatus
+    error: str | None
+    created_at: UTCDatetime
+    cost_usd: float | None
+    results: list[ResultRead]

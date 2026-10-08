@@ -24,3 +24,12 @@ def client():
     SQLModel.metadata.drop_all(engine)
     with TestClient(app) as c:  # "with" déclenche le démarrage (création des tables)
         yield c
+
+
+@pytest.fixture(autouse=True)
+def no_real_claude(monkeypatch):
+    """Garde-fou : si un test oublie de simuler Claude, il échoue au lieu
+    d'appeler (et de payer) la vraie API."""
+    def forbidden():
+        raise RuntimeError("Un test a tenté d'appeler la vraie API Claude !")
+    monkeypatch.setattr("app.cogitate.get_client", forbidden)

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Veste en laine bouillie | Atelier Vérone</title>
+
+  <!-- Bloc 1 : valide, mais sans produit -->
+  <script type="application/ld+json">
+  { "@context": "https://schema.org", "@type": "Organization", "name": "Atelier Vérone" }
+  </script>
+
+  <!-- Bloc 2 : complètement illisible, doit être ignoré sans planter -->
+  <script type="application/ld+json">
+  { "@type": "Product", "name": "Cassé" "offers": oops }
+  </script>
+
+  <!-- Bloc 3 : une LISTE, avec @type en tableau, image relative, AggregateOffer,
+       un retour à la ligne brut dans une chaîne et une virgule en trop -->
+  <script type="application/ld+json">
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Vestes" }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": ["Product"],
+      "name": "Veste en laine bouillie",
+      "description": "Laine bouillie du Tyrol.
+Fabriquée à Lyon.",
+      "brand": "Atelier Vérone",
+      "image": "/media/veste-laine.jpg",
+      "offers": {
+        "@type": "AggregateOffer",
+        "lowPrice": "1290.00",
+        "highPrice": "1390.00",
+        "priceCurrency": "EUR",
+        "offerCount": 2,
+      }
+    }
+  ]
+  </script>
+</head>
+<body>
+  <h1>Veste en laine bouillie</h1>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# API web
+fastapi==0.142.2
+uvicorn[standard]==0.46.0
+
+# Base de données (SQLite en local, Postgres en production)
+sqlmodel==0.0.47
+psycopg[binary]==3.2.10
+
+# Appel à Claude
+anthropic==1.11.0
+
+# Vérification des pages produit
+httpx==0.28.1
+beautifulsoup4==4.14.3
+
+# Configuration (.env)
+python-dotenv==1.2.2
+
+# Tests
+pytest==9.1.1

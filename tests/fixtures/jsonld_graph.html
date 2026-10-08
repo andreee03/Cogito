@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Lampe Orbe en laiton – Maison Halde</title>
+  <!-- Les balises og annoncent un ancien prix : le JSON-LD doit avoir la priorité -->
+  <meta property="og:title" content="Lampe Orbe – Maison Halde">
+  <meta property="og:image" content="https://www.maison-halde.example/og/orbe-social.jpg">
+  <meta property="product:price:amount" content="210.00">
+  <meta property="product:price:currency" content="EUR">
+
+  <!-- Style Yoast/WooCommerce : tout est dans un @graph -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.maison-halde.example/#org",
+        "name": "Maison Halde",
+        "logo": "https://www.maison-halde.example/logo.png"
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://www.maison-halde.example/produit/lampe-orbe",
+        "name": "Lampe Orbe en laiton"
+      },
+      {
+        "@type": "Product",
+        "@id": "https://www.maison-halde.example/produit/lampe-orbe#product",
+        "name": "Lampe Orbe en laiton",
+        "sku": "ORB-LAI-01",
+        "brand": { "@type": "Brand", "name": "Maison Halde" },
+        "image": [
+          { "@type": "ImageObject", "url": "https://www.maison-halde.example/media/orbe-1.jpg", "width": 1200 },
+          { "@type": "ImageObject", "url": "https://www.maison-halde.example/media/orbe-2.jpg", "width": 1200 }
+        ],
+        "offers": [
+          {
+            "@type": "Offer",
+            "price": "189.00",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock",
+            "url": "https://www.maison-halde.example/produit/lampe-orbe"
+          }
+        ],
+        "isRelatedTo": [
+          {
+            "@type": "Product",
+            "name": "Ampoule filament (produit associé, à ignorer)",
+            "offers": { "@type": "Offer", "price": "12.00", "priceCurrency": "EUR" }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <h1>Lampe Orbe en laiton</h1>
+  <p class="price">189,00 €</p>
+</body>
+</html>

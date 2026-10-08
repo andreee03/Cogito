@@ -7,7 +7,11 @@ pour ne jamais toucher à ta vraie base shopping.db.
 import os
 import tempfile
 
-os.environ["DATABASE_URL"] = f"sqlite:///{tempfile.mkdtemp()}/test.db"
+# TEST_DATABASE_URL (facultatif) : lancer les tests sur une base Postgres de
+# test. ATTENTION : elle est vidée à chaque test, ne jamais y mettre ta vraie base.
+os.environ["DATABASE_URL"] = (
+    os.getenv("TEST_DATABASE_URL") or f"sqlite:///{tempfile.mkdtemp()}/test.db"
+)
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key-not-used")
 # Les tests ne dépendent pas de ton .env : le mode FAKE_CLAUDE y est coupé
 # (load_dotenv ne remplace jamais une variable déjà définie).

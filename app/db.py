@@ -13,13 +13,27 @@ from app.prompts import DEFAULT_MASTER_PROMPT
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./shopping.db")
 
-# SQLite refuse par défaut qu'un même fichier soit utilisé depuis plusieurs
-# threads ; FastAPI en utilise plusieurs, donc on lève cette restriction.
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+def normalize_database_url(url: str) -> str:
+    """Neon (et Render) donnent des URL "postgresql://…" ou "postgres://…".
+    SQLAlchemy les associe au vieux pilote psycopg2 ; on utilise psycopg 3."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
+DATABASE_URL = normalize_database_url(os.getenv("DATABASE_URL", "sqlite:///./shopping.db"))
+
+if DATABASE_URL.startswith("sqlite"):
+    # SQLite refuse par défaut qu'un même fichier soit utilisé depuis plusieurs
+    # threads ; FastAPI en utilise plusieurs, donc on lève cette restriction.
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    # pool_pre_ping : Neon coupe les connexions inactives (base mise en veille) ;
+    # on vérifie donc chaque connexion avant de la réutiliser.
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 
 def init_db() -> None:

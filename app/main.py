@@ -1,9 +1,11 @@
 """Routes de l'API."""
 
+import os
 from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
 from app import cogitate
@@ -34,6 +36,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Shopping réfléchi", lifespan=lifespan)
+
+
+def allowed_origins() -> list[str]:
+    """ALLOWED_ORIGINS du .env : adresses du front-end, séparées par des virgules
+    (ex. "http://localhost:5173,https://mon-front.onrender.com")."""
+    raw = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
+    return [origin.strip().rstrip("/") for origin in raw.split(",") if origin.strip()]
+
+
+# CORS : autorise le navigateur à appeler l'API depuis le front-end, qui est
+# servi depuis une autre adresse (autre port en local, autre domaine en ligne).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins(),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Raccourci : "session: SessionDep" donne une session de base à chaque route.
 SessionDep = Annotated[Session, Depends(get_session)]

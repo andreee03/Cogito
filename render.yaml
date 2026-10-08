@@ -1,0 +1,21 @@
+# Configuration Render ("Blueprint") : Render la lit pour créer le service web.
+# Les valeurs secrètes (sync: false) sont demandées dans le tableau de bord Render,
+# elles ne sont jamais écrites ici.
+services:
+  - type: web
+    name: shopping-reflechi-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL        # URL Postgres de Neon
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS     # adresse(s) du front-end, séparées par des virgules
+        sync: false
+      - key: FAKE_CLAUDE
+        value: "0"

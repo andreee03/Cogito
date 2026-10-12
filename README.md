@@ -85,6 +85,7 @@ app/
   prompts.py      prompt système + profil par défaut
   fake_claude.py  faux Claude gratuit (FAKE_CLAUDE=1)
 tests/            tests pytest (+ fixtures HTML)
+frontend/         interface web React (voir frontend/README.md)
 render.yaml       configuration du déploiement Render
 ```
 

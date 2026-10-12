@@ -17,5 +17,7 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS     # adresse(s) du front-end, séparées par des virgules
         sync: false
+      - key: NOTION_TOKEN        # clé de l'intégration Notion (import « Task Inbox »)
+        sync: false
       - key: FAKE_CLAUDE
         value: "0"

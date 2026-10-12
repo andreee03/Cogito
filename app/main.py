@@ -8,9 +8,10 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Response, 
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
-from app import cogitate
+from app import cogitate, notion_import
 from app.db import get_or_create_profile, get_session, init_db
 from app.models import (
+    Category,
     CogitateRequest,
     CogitateResponse,
     Item,
@@ -18,6 +19,7 @@ from app.models import (
     ItemRead,
     ItemStatus,
     ItemUpdate,
+    NotionImportResult,
     ProfileData,
     Result,
     ResultReactionUpdate,
@@ -149,6 +151,40 @@ def delete_item(item_id: int, session: SessionDep):
     session.delete(item)  # supprime aussi recherches et résultats (cascade)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# Import depuis Notion
+# ---------------------------------------------------------------------------
+
+@app.post("/import/notion", response_model=NotionImportResult)
+def import_from_notion(session: SessionDep):
+    """Ajoute à la liste les entrées « Task Inbox » de Notion sans catégorie.
+    Une entrée dont le titre existe déjà dans la liste est ignorée : on peut donc
+    relancer l'import sans créer de doublons."""
+    try:
+        titles = notion_import.fetch_inbox_titles()
+    except notion_import.NotionImportError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc))
+
+    existing = {title.casefold() for title in session.exec(select(Item.title)).all()}
+    created: list[Item] = []
+    skipped = 0
+    for title in titles:
+        key = title.casefold()
+        if key in existing:
+            skipped += 1
+            continue
+        existing.add(key)
+        item = Item(title=title, category=Category.autre)
+        session.add(item)
+        created.append(item)
+    session.commit()
+    for item in created:
+        session.refresh(item)
+    return NotionImportResult(
+        imported=len(created), skipped=skipped, items=[to_item_read(i) for i in created]
+    )
 
 
 # ---------------------------------------------------------------------------

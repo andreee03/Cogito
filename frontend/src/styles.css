@@ -375,6 +375,23 @@ svg {
   margin-bottom: 22px;
 }
 
+.page-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 559px) {
+  .page-head:not(.page-head--stack) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .page-head__actions .btn {
+    flex: 1;
+  }
+}
+
 .page-head--stack {
   display: block;
 }
@@ -916,6 +933,11 @@ svg {
 .notice--error {
   background: var(--danger-soft);
   color: var(--danger);
+}
+
+.notice--ok {
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .notice .icon-btn {

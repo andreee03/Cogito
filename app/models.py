@@ -183,6 +183,13 @@ class CogitateResponse(SQLModel):
     search_id: int
 
 
+class NotionImportResult(SQLModel):
+    """Réponse de POST /import/notion."""
+    imported: int  # articles créés
+    skipped: int  # entrées Notion ignorées (titre déjà présent dans la liste)
+    items: list[ItemRead]  # les articles créés
+
+
 class ResultReactionUpdate(SQLModel):
     """Corps de PATCH /results/{id} : "like", "dislike" ou null (annuler)."""
     reaction: Reaction | None  # pas de valeur par défaut : le champ est obligatoire

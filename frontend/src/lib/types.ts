@@ -61,6 +61,12 @@ export interface Search {
   results: Result[];
 }
 
+export interface NotionImportResult {
+  imported: number;
+  skipped: number;
+  items: Item[];
+}
+
 export const MAX_ITERATIONS = 3;
 
 export const CATEGORIES: { value: Category; label: string }[] = [

@@ -254,6 +254,9 @@ export const DEMO_CATALOG: Record<Category, DemoProduct[]> = {
 const DAY = 86_400_000;
 const ago = (days: number) => new Date(Date.now() - days * DAY).toISOString();
 
+/** Entrées fictives renvoyées par « Importer depuis Notion » en mode démo. */
+export const DEMO_NOTION_TITLES = ["Pommeau de douche", "Sac à dos de voyage", "Plaid en laine"];
+
 export const DEMO_MASTER_PROMPT = `J'aime les objets bien faits, durables et un peu originaux, jamais tape-à-l'œil.
 Je privilégie les matières naturelles (lin, laine, cuir, bois, céramique) et les marques indépendantes ou de créateurs.
 Palette : tons neutres, sable, sauge, indigo. Je déteste le logo voyant et la fast fashion.

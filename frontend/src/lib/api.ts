@@ -2,11 +2,12 @@
 // Deux implémentations partagent la même interface `Api` :
 //   - realApi : appelle le back-end Python dont l'URL est enregistrée dans les Réglages ;
 //   - demoApi : données fictives en mémoire (mode démo, quand aucune URL n'est configurée).
-import { buildDemoState, DEMO_CATALOG, DEMO_MASTER_PROMPT } from "./demoData";
+import { buildDemoState, DEMO_CATALOG, DEMO_MASTER_PROMPT, DEMO_NOTION_TITLES } from "./demoData";
 import type {
   Item,
   ItemCreate,
   ItemUpdate,
+  NotionImportResult,
   Profile,
   Reaction,
   Result,
@@ -27,6 +28,7 @@ export interface Api {
   listSearches(itemId: number): Promise<Search[]>;
   getSearch(id: number): Promise<Search>;
   setReaction(resultId: number, reaction: Reaction | null): Promise<Result>;
+  importFromNotion(): Promise<NotionImportResult>;
 }
 
 /** Erreur renvoyée par l'API (status = 0 pour une erreur réseau). */
@@ -156,6 +158,7 @@ function realApi(base: string): Api {
     getSearch: (id) => request(base, `/searches/${id}`),
     setReaction: (resultId, reaction) =>
       request(base, `/results/${resultId}`, { method: "PATCH", body: { reaction } }),
+    importFromNotion: () => request(base, "/import/notion", { method: "POST" }),
   };
 }
 
@@ -398,5 +401,32 @@ const demoApi: Api = {
       }
     }
     throw new ApiError("Résultat introuvable", 404);
+  },
+  async importFromNotion() {
+    await delay(700);
+    const s = loadDemo();
+    const existing = new Set(s.items.map((i) => i.title.toLocaleLowerCase("fr")));
+    const created: Item[] = [];
+    let skipped = 0;
+    for (const title of DEMO_NOTION_TITLES) {
+      if (existing.has(title.toLocaleLowerCase("fr"))) {
+        skipped++;
+        continue;
+      }
+      const item: StoredItem = {
+        id: s.nextItemId++,
+        title,
+        category: "autre",
+        notes: null,
+        custom_prompt: null,
+        budget_max: null,
+        status: "a_chercher",
+        created_at: new Date().toISOString(),
+      };
+      s.items.push(item);
+      created.push(withCount(s, item));
+    }
+    saveDemo();
+    return { imported: created.length, skipped, items: created };
   },
 };

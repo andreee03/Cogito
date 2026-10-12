@@ -35,6 +35,7 @@ Puis ouvrir `.env` et le remplir :
 | `DATABASE_URL` | Base de données | `sqlite:///./shopping.db` |
 | `ALLOWED_ORIGINS` | Adresses du front-end autorisées (CORS), séparées par des virgules | `http://localhost:5173` |
 | `FAKE_CLAUDE` | `1` = faux Claude gratuit (voir plus bas) | `0` |
+| `NOTION_TOKEN` | Clé de l'intégration Notion, pour « Importer de Notion » (voir plus bas) | `ntn_…` |
 
 `.env` contient des secrets : il est dans `.gitignore` et ne doit jamais être commité.
 
@@ -101,6 +102,7 @@ render.yaml       configuration du déploiement Render
 | GET | `/items/{id}/searches` | Toutes les recherches de l'article, avec leurs résultats |
 | GET | `/searches/{id}` | Une recherche (le front l'interroge toutes les 3 s) |
 | PATCH | `/results/{id}` | `{"reaction": "like" \| "dislike" \| null}` |
+| POST | `/import/notion` | Importe les entrées « Task Inbox » sans catégorie → `{"imported", "skipped", "items"}` ; `503` sans `NOTION_TOKEN`, `502` si Notion refuse |
 
 Le détail de chaque route et de chaque champ est sur `/docs`.
 
@@ -109,6 +111,25 @@ lien est vérifié) → `done` ou `error` (message dans `error`). Une recherche 
 erreur ne consomme pas d'itération. À partir de la 2ᵉ itération, Claude reçoit un
 résumé compact des produits déjà proposés (nom, marque, prix, like/dislike) et mon
 retour. Le coût estimé est dans `cost_usd`.
+
+### Import depuis Notion
+
+Le bouton **Importer de Notion** (page « Ma liste ») appelle `POST /import/notion`.
+Le back-end lit la base Notion **Tasks [PT]** du PARA Dashboard avec le même filtre
+que la section **Task Inbox** (tâche non terminée et sans projet), en ne gardant que
+les entrées dont **Category est vide**. Chaque titre devient un article (catégorie
+« autre », statut « à chercher »). Un titre déjà présent dans la liste (sans tenir
+compte des majuscules) est ignoré : relancer l'import ne crée pas de doublon.
+
+Mise en place (une seule fois) :
+1. Sur [notion.so/my-integrations](https://www.notion.so/my-integrations) : **New
+   integration** (type *Internal*), accès en lecture au contenu. Copier la clé
+   (*Internal Integration Secret*).
+2. Dans Notion, ouvrir la base **Tasks [PT]** (PARA Dashboard → Databases) :
+   **•••** → **Connexions** → ajouter l'intégration.
+3. Dans `.env` : `NOTION_TOKEN=<la clé>`, puis relancer le serveur.
+
+`NOTION_DATABASE_ID` permet de viser une autre base (identifiant dans son URL).
 
 ---
 

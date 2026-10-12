@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ItemForm } from "../components/ItemForm";
 import { EmptyState, ErrorState, IterationMeter, Sheet, Spinner, StatusBadge } from "../components/ui";
 import { useAsync } from "../hooks/useAsync";
-import { api } from "../lib/api";
+import { api, errorMessage } from "../lib/api";
 import { formatBudget } from "../lib/format";
 import type { Category, ItemStatus } from "../lib/types";
 import { CATEGORIES, STATUSES, categoryLabel } from "../lib/types";
@@ -14,6 +14,28 @@ export function ListPage() {
   const [category, setCategory] = useState<Category | "all">("all");
   const [status, setStatus] = useState<ItemStatus | "all">("all");
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function importFromNotion() {
+    setImporting(true);
+    setImportMsg(null);
+    try {
+      const { imported, skipped } = await api().importFromNotion();
+      const parts = [
+        imported === 0
+          ? "Aucune nouvelle envie dans Notion."
+          : `${imported} envie${imported > 1 ? "s" : ""} importée${imported > 1 ? "s" : ""} depuis Notion.`,
+      ];
+      if (skipped > 0) parts.push(`${skipped} déjà dans ta liste.`);
+      await reload({ silent: true });
+      setImportMsg({ ok: true, text: parts.join(" ") });
+    } catch (err) {
+      setImportMsg({ ok: false, text: errorMessage(err) });
+    } finally {
+      setImporting(false);
+    }
+  }
 
   const filtered = useMemo(
     () =>
@@ -39,10 +61,31 @@ export function ListPage() {
             </p>
           )}
         </div>
-        <button className="btn btn--primary btn--add" onClick={() => setAdding(true)}>
-          <span aria-hidden>+</span> Ajouter
-        </button>
+        <div className="page-head__actions">
+          <button
+            className="btn btn--ghost"
+            onClick={importFromNotion}
+            disabled={importing}
+            title="Ajoute les entrées « Task Inbox » sans catégorie de ton Notion"
+          >
+            {importing ? "Import…" : "Importer de Notion"}
+          </button>
+          <button className="btn btn--primary btn--add" onClick={() => setAdding(true)}>
+            <span aria-hidden>+</span> Ajouter
+          </button>
+        </div>
       </header>
+
+      {importMsg && (
+        <div className={`notice ${importMsg.ok ? "notice--ok" : "notice--error"}`} role="status">
+          <p>{importMsg.text}</p>
+          <button className="icon-btn" aria-label="Fermer" onClick={() => setImportMsg(null)}>
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       <div className="filters">
         <div className="chips" role="group" aria-label="Filtrer par catégorie">

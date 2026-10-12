@@ -40,3 +40,11 @@ def no_real_claude(monkeypatch):
     def forbidden():
         raise RuntimeError("Un test a tenté d'appeler la vraie API Claude !")
     monkeypatch.setattr("app.cogitate.get_client", forbidden)
+
+
+@pytest.fixture(autouse=True)
+def no_real_notion(monkeypatch):
+    """Garde-fou : aucun test n'appelle la vraie API Notion."""
+    def forbidden():
+        raise RuntimeError("Un test a tenté d'appeler la vraie API Notion !")
+    monkeypatch.setattr("app.notion_import.get_http_client", forbidden)

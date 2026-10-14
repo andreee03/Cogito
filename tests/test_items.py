@@ -75,3 +75,23 @@ def test_profile_migration_runs_once(client):
     client.put("/profile", json={"master_prompt": "Minimalisme japonais."})
     init_db()  # simule un redémarrage du serveur
     assert client.get("/profile").json() == {"master_prompt": "Minimalisme japonais."}
+
+
+def test_initial_prompt_preview(client):
+    from app.prompts import COGITATE_SYSTEM_PROMPT
+
+    client.put("/profile", json={"master_prompt": "Minimalisme japonais."})
+    item_id = client.post("/items", json={
+        "title": "Lampe de bureau", "category": "deco", "budget_max": 250,
+        "custom_prompt": "Pas de LED visible",
+    }).json()["id"]
+
+    r = client.get(f"/items/{item_id}/prompt")
+    assert r.status_code == 200
+    md = r.json()["markdown"]
+    assert md.startswith("# Prompt système\n")
+    assert COGITATE_SYSTEM_PROMPT.strip() in md
+    for expected in ("# Message utilisateur", "Minimalisme japonais.", "Lampe de bureau",
+                     "250 €", "Pas de LED visible"):
+        assert expected in md
+    assert client.get("/items/999/prompt").status_code == 404

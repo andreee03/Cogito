@@ -137,6 +137,21 @@ def build_user_prompt(
     return "\n".join(lines)
 
 
+
+def build_initial_prompt_markdown(master_prompt: str, item: Item) -> str:
+    """Le prompt complet de la 1re itération (prompt système + message
+    utilisateur), au format Markdown, pour l'afficher dans l'app."""
+    return "\n".join([
+        "# Prompt système",
+        "",
+        COGITATE_SYSTEM_PROMPT.strip(),
+        "",
+        "# Message utilisateur",
+        "",
+        build_user_prompt(master_prompt, item),
+        "",
+    ])
+
 # ---------------------------------------------------------------------------
 # 2. Appel à Claude
 # ---------------------------------------------------------------------------

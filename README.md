@@ -97,6 +97,7 @@ render.yaml       configuration du déploiement Render
 |---|---|---|
 | GET | `/health` | `{"status": "ok"}` |
 | GET / PUT | `/profile` | Lire / modifier mon `master_prompt` (mes goûts) |
+| GET | `/items/{id}/prompt` | Prompt complet (Markdown) de la 1re itération |
 | GET / POST | `/items` | Lister (récents d'abord) / créer un article |
 | GET / PATCH / DELETE | `/items/{id}` | Lire / modifier / supprimer un article |
 | POST | `/items/{id}/cogitate` | Lancer une recherche → `202 {"search_id"}` ; `409` si une recherche est en cours ou si 3 itérations ont réussi |

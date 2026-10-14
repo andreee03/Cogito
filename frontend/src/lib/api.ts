@@ -13,7 +13,7 @@ import type {
   Result,
   Search,
 } from "./types";
-import { MAX_ITERATIONS } from "./types";
+import { MAX_ITERATIONS, categoryLabel } from "./types";
 
 export interface Api {
   health(): Promise<{ status: string }>;
@@ -24,6 +24,7 @@ export interface Api {
   getItem(id: number): Promise<Item>;
   updateItem(id: number, data: ItemUpdate): Promise<Item>;
   deleteItem(id: number): Promise<void>;
+  getInitialPrompt(itemId: number): Promise<{ markdown: string }>;
   cogitate(itemId: number, feedback: string | null): Promise<{ search_id: number }>;
   listSearches(itemId: number): Promise<Search[]>;
   getSearch(id: number): Promise<Search>;
@@ -152,6 +153,7 @@ function realApi(base: string): Api {
     getItem: (id) => request(base, `/items/${id}`),
     updateItem: (id, data) => request(base, `/items/${id}`, { method: "PATCH", body: data }),
     deleteItem: (id) => request(base, `/items/${id}`, { method: "DELETE" }),
+    getInitialPrompt: (itemId) => request(base, `/items/${itemId}/prompt`),
     cogitate: (itemId, feedback) =>
       request(base, `/items/${itemId}/cogitate`, { method: "POST", body: { feedback } }),
     listSearches: (itemId) => request(base, `/items/${itemId}/searches`),
@@ -280,6 +282,19 @@ function findItem(state: DemoState, id: number): StoredItem {
   return item;
 }
 
+/** Même structure que build_initial_prompt_markdown côté back-end ; en démo,
+ * le prompt système (défini par le back-end) n'est pas disponible. */
+function demoInitialPrompt(profile: string, item: StoredItem): string {
+  const lines = ["# Prompt système", "", "_(Mode démo : le prompt système est défini par le back-end.)_", "", "# Message utilisateur", ""];
+  if (profile.trim()) lines.push("## Mes goûts et principes d'achat", profile.trim(), "");
+  lines.push("## Ce que je cherche", `- Article : ${item.title}`, `- Catégorie : ${categoryLabel(item.category).toLowerCase()}`);
+  if (item.notes) lines.push(`- Notes : ${item.notes}`);
+  if (item.budget_max !== null) lines.push(`- Budget maximum : ${item.budget_max} €`);
+  if (item.custom_prompt) lines.push("", "## Consignes spécifiques pour cet article", item.custom_prompt.trim());
+  lines.push("", "Trouve-moi entre 5 et 8 produits et termine par le bloc JSON demandé.", "");
+  return lines.join("\n");
+}
+
 const demoApi: Api = {
   async health() {
     await delay();
@@ -344,6 +359,11 @@ const demoApi: Api = {
     s.items = s.items.filter((i) => i.id !== id);
     s.searches = s.searches.filter((x) => x.item_id !== id);
     saveDemo();
+  },
+  async getInitialPrompt(itemId) {
+    await delay();
+    const s = loadDemo();
+    return { markdown: demoInitialPrompt(s.profile.master_prompt, findItem(s, itemId)) };
   },
   async cogitate(itemId, feedback) {
     await delay();

@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Back-end (uvicorn)",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\uvicorn.exe app.main:app --reload",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "presentation": { "group": "dev", "reveal": "silent" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Front-end (vite)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}\\frontend" },
+      "isBackground": true,
+      "presentation": { "group": "dev", "reveal": "silent" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Cogito : tout lancer",
+      "dependsOn": ["Back-end (uvicorn)", "Front-end (vite)"],
+      "runOptions": { "runOn": "folderOpen" },
+      "problemMatcher": []
+    }
+  ]
+}

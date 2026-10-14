@@ -183,6 +183,11 @@ class CogitateRequest(SQLModel):
     feedback: str | None = None
 
 
+class PromptPreview(SQLModel):
+    """Réponse de GET /items/{id}/prompt : le prompt de la 1re itération."""
+    markdown: str
+
+
 class CogitateResponse(SQLModel):
     """Réponse 202 de POST /items/{id}/cogitate."""
     search_id: int

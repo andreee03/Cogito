@@ -21,6 +21,7 @@ from app.models import (
     ItemUpdate,
     NotionImportResult,
     ProfileData,
+    PromptPreview,
     Result,
     ResultReactionUpdate,
     ResultRead,
@@ -218,6 +219,15 @@ def cogitate_item(
     # La recherche (30 s à 2 min) tourne après l'envoi de la réponse 202.
     background_tasks.add_task(cogitate.run_search, search.id)
     return CogitateResponse(search_id=search.id)
+
+
+@app.get("/items/{item_id}/prompt", response_model=PromptPreview)
+def read_initial_prompt(item_id: int, session: SessionDep):
+    """Le prompt complet envoyé à Claude lors de la 1re itération (sans retour
+    ni résultats précédents), avec le profil et l'article tels qu'ils sont maintenant."""
+    item = get_item_or_404(session, item_id)
+    profile = get_or_create_profile(session)
+    return PromptPreview(markdown=cogitate.build_initial_prompt_markdown(profile.master_prompt, item))
 
 
 @app.get("/items/{item_id}/searches", response_model=list[SearchRead])

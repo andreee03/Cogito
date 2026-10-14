@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ItemForm } from "../components/ItemForm";
 import { ProductCard } from "../components/ProductCard";
+import { PromptSheet } from "../components/PromptSheet";
 import { Thinking } from "../components/Thinking";
 import { EmptyState, ErrorState, IterationMeter, Sheet, Spinner, StatusBadge } from "../components/ui";
 import { useAsync } from "../hooks/useAsync";
@@ -37,6 +38,7 @@ export function ItemPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [editing, setEditing] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
   const [pollError, setPollError] = useState<string | null>(null);
   const [pollKey, setPollKey] = useState(0);
 
@@ -204,6 +206,9 @@ export function ItemPage() {
                 : `Itération ${item.iterations_count + 1} sur ${MAX_ITERATIONS}`}
             </span>
           </button>
+          <button className="link-btn" onClick={() => setShowPrompt(true)}>
+            Voir le prompt envoyé (.md)
+          </button>
         </div>
       </header>
 
@@ -321,6 +326,8 @@ export function ItemPage() {
           goûts.
         </EmptyState>
       )}
+
+      {showPrompt && <PromptSheet item={item} onClose={() => setShowPrompt(false)} />}
 
       {editing && (
         <Sheet title="Modifier l'article" onClose={() => setEditing(false)}>

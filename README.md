@@ -83,7 +83,8 @@ app/
   db.py           connexion à la base (SQLite ou Postgres)
   cogitate.py     recherche "Cogiter" : prompt, appel à Claude, lecture du JSON, coût
   verify.py       vérification des liens produits (prix, image)
-  prompts.py      prompt système + profil par défaut
+  prompts.py      prompt système
+  migrations.py   migrations de données (appliquées une seule fois au démarrage)
   fake_claude.py  faux Claude gratuit (FAKE_CLAUDE=1)
 tests/            tests pytest (+ fixtures HTML)
 frontend/         interface web React (voir frontend/README.md)

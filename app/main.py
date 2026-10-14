@@ -32,7 +32,7 @@ from app.models import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()  # au démarrage : création des tables + profil par défaut
+    init_db()  # au démarrage : création des tables, du profil + migrations
     cogitate.fail_interrupted_searches()
     yield
 

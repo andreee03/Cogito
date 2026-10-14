@@ -9,8 +9,6 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import Session, SQLModel, create_engine, select
 
-from app.prompts import DEFAULT_MASTER_PROMPT
-
 load_dotenv()
 
 
@@ -37,21 +35,24 @@ else:
 
 
 def init_db() -> None:
-    """Crée les tables manquantes et le profil par défaut."""
-    from app.models import Profile  # import local : évite un import circulaire
+    """Crée les tables manquantes, le profil et applique les migrations de données."""
+    import app.models  # noqa: F401  (import local : évite un import circulaire)
+    from app.migrations import run_migrations
 
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         get_or_create_profile(session)
+        run_migrations(session)
 
 
 def get_or_create_profile(session: Session):
-    """Il n'y a qu'un seul profil (id = 1). On le crée s'il n'existe pas."""
+    """Il n'y a qu'un seul profil (id = 1). On le crée (vide) s'il n'existe pas ;
+    son contenu se modifie dans l'app."""
     from app.models import Profile
 
     profile = session.exec(select(Profile)).first()
     if profile is None:
-        profile = Profile(id=1, master_prompt=DEFAULT_MASTER_PROMPT)
+        profile = Profile(id=1, master_prompt="")
         session.add(profile)
         session.commit()
         session.refresh(profile)

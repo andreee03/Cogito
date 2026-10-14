@@ -76,6 +76,11 @@ class Profile(SQLModel, table=True):
     master_prompt: str
 
 
+class AppliedMigration(SQLModel, table=True):
+    """Migrations de données déjà appliquées (voir app/migrations.py)."""
+    name: str = Field(primary_key=True)
+
+
 # ---------------------------------------------------------------------------
 # Articles (items)
 # ---------------------------------------------------------------------------

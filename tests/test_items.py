@@ -1,6 +1,6 @@
 """Tests du jalon 1 : /health, /profile et le CRUD des articles."""
 
-from app.prompts import DEFAULT_MASTER_PROMPT
+from app.migrations import PROFILE_PROMPT
 
 
 def test_health(client):
@@ -8,7 +8,7 @@ def test_health(client):
 
 
 def test_profile_default_then_update(client):
-    assert client.get("/profile").json() == {"master_prompt": DEFAULT_MASTER_PROMPT}
+    assert client.get("/profile").json() == {"master_prompt": PROFILE_PROMPT}
 
     r = client.put("/profile", json={"master_prompt": "Minimalisme japonais."})
     assert r.status_code == 200
@@ -66,3 +66,12 @@ def test_get_and_delete(client):
     assert r.content == b""
     assert client.get(f"/items/{item['id']}").status_code == 404
     assert client.delete(f"/items/{item['id']}").status_code == 404
+
+
+def test_profile_migration_runs_once(client):
+    """Après la migration, une modification faite dans l'app survit au redémarrage."""
+    from app.db import init_db
+
+    client.put("/profile", json={"master_prompt": "Minimalisme japonais."})
+    init_db()  # simule un redémarrage du serveur
+    assert client.get("/profile").json() == {"master_prompt": "Minimalisme japonais."}

@@ -109,10 +109,10 @@ def build_user_prompt(
     """Message envoyé à Claude : mes goûts + l'article recherché
     (+ le résumé des itérations précédentes et mon retour, à partir de la 2e)."""
     category = getattr(item.category, "value", item.category)
-    lines = [
-        "## Mes goûts et principes d'achat",
-        master_prompt.strip(),
-        "",
+    lines = []
+    if master_prompt.strip():
+        lines += ["## Mes goûts et principes d'achat", master_prompt.strip(), ""]
+    lines += [
         "## Ce que je cherche",
         f"- Article : {item.title}",
         f"- Catégorie : {CATEGORY_LABELS.get(category, category)}",

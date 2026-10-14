@@ -103,9 +103,9 @@ export function ItemForm({ initial, submitLabel, onSubmit, onCancel }: Props) {
       </label>
 
       <details className="disclosure" open={Boolean(initial?.custom_prompt)}>
-        <summary>Prompt personnalisé (optionnel)</summary>
+        <summary>Prompt spécifique (optionnel)</summary>
         <label className="field">
-          <span className="field__hint">Laisse vide pour utiliser ton profil de goûts.</span>
+          <span className="field__hint">S'ajoute à ton profil de goûts et l'emporte en cas de conflit.</span>
           <textarea
             className="input"
             rows={4}

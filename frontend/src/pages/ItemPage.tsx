@@ -176,7 +176,7 @@ export function ItemPage() {
           {item.notes && <p className="detail-head__notes">{item.notes}</p>}
           {item.custom_prompt && (
             <blockquote className="detail-head__prompt">
-              <span className="eyebrow">Prompt personnalisé</span>
+              <span className="eyebrow">Prompt spécifique</span>
               {item.custom_prompt}
             </blockquote>
           )}

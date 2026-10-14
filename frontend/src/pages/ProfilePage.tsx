@@ -35,8 +35,8 @@ export function ProfilePage() {
         <p className="eyebrow">Ce qui guide chaque recherche</p>
         <h1 className="page-title">Mon profil de goûts</h1>
         <p className="page-sub">
-          Décris librement ce que tu aimes : matières, couleurs, marques, ce que tu fuis. Cogito s'en sert pour chaque
-          article, sauf s'il a un prompt personnalisé.
+          Tes principes d'achat : matières, couleurs, marques, ce que tu fuis. Cogito s'en sert pour chaque article ; le
+          prompt spécifique d'un article l'emporte en cas de conflit.
         </p>
       </header>
 
